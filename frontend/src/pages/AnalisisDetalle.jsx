@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import '../index.css';
-// IMPORTANTE: El path ahora apunta a helpers/links
 import { generateAffiliateLink } from '../helpers/links';
 
 export default function AnalisisDetalle() {
@@ -15,8 +14,8 @@ export default function AnalisisDetalle() {
 
   useEffect(() => {
     if (!resultado) {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      fetch(`${apiUrl}/api/analisis/${slug}`)
+      // CAMBIO: Usamos ruta relativa /api/analisis/ para conectar con Vercel
+      fetch(`/api/analisis/${slug}`)
         .then(res => {
           if (!res.ok) throw new Error("Error en petición");
           return res.json();
@@ -40,12 +39,10 @@ export default function AnalisisDetalle() {
   const precio = resultado?.datos_web?.precio || "";
   const urlOriginal = resultado?.datos_web?.url || "";
 
-  // DETERMINAR TIENDA DE ORIGEN
   const esAmazon = urlOriginal.toLowerCase().includes('amazon');
   const esShein = urlOriginal.toLowerCase().includes('shein');
   const esTemu = urlOriginal.toLowerCase().includes('temu');
 
-  // GENERAR LINKS MONETIZADOS
   const linkPrincipal = generateAffiliateLink(urlOriginal);
   const linkSearchTemu = generateAffiliateLink(`https://www.temu.com/search_result.html?search_key=${encodeURIComponent(titulo)}`);
   const linkSearchShein = generateAffiliateLink(`https://www.shein.com/pdsearch/${encodeURIComponent(titulo)}`);

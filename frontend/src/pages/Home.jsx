@@ -13,10 +13,8 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Usamos variable de entorno para que funcione en producción
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    
-    fetch(`${apiUrl}/api/tendencias`)
+    // CAMBIO: Usamos ruta relativa para conectar con el backend en Vercel
+    fetch('/api/tendencias')
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setTendencias(data); })
       .catch(err => console.log("Error tendencias", err));
@@ -28,10 +26,9 @@ export default function Home() {
     setCargando(true);
     setError(null);
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
     try {
-      const response = await fetch(`${apiUrl}/api/analizar`, {
+      // CAMBIO: Usamos ruta relativa /api/analizar
+      const response = await fetch('/api/analizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -169,13 +166,13 @@ export default function Home() {
           </form>
         </div>
 
-        {/* --- BOTÓN DE DESCARGA EXTENSIÓN (ESTRATEGIA ROBIN HOOD) --- */}
+        {/* --- BOTÓN DE DESCARGA EXTENSIÓN --- */}
         <div className="mt-12 animate-pulse hover:animate-none transition-all">
           <p className="text-sm text-slate-400 font-bold mb-3 uppercase tracking-wider">
             ¿Compras mucho en Amazon?
           </p>
           <a 
-            href="#" // AQUÍ PONDRÁS TU LINK REAL DE LA CHROME STORE
+            href="#" 
             onClick={(e) => { e.preventDefault(); alert("¡Pronto disponible en la Chrome Store! De momento usa la versión local."); }}
             className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-3 shadow-xl hover:bg-slate-800 hover:scale-105 transition-all mx-auto w-fit"
           >
@@ -221,7 +218,7 @@ export default function Home() {
       </main>
 
       <footer className="p-6 text-center text-slate-400 text-sm font-medium">
-        <p>© 2024 El Decisor IA. Analizamos, tú decides.</p>
+        <p>© 2026 El Decisor IA. Analizamos, tú decides.</p>
       </footer>
     </div>
   );
