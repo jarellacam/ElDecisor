@@ -81,10 +81,11 @@ boton.addEventListener("click", async () => {
     
     const response = await fetch(`${API_URL}/api/analizar`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ url: currentUrl }),
-      mode: 'cors', // Aseguramos modo CORS
-      credentials: 'omit' // <--- ESTO evita el conflicto con el backend
+      credentials: 'omit' 
     });
 
     const data = await response.json();
