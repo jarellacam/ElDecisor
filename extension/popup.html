@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { width: 320px; font-family: 'Segoe UI', sans-serif; padding: 15px; }
+    h2 { margin: 0 0 10px 0; color: #4F46E5; font-size: 16px; }
+    .btn { display: block; width: 100%; padding: 10px; background: #4F46E5; color: white; text-align: center; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn:hover { background: #4338ca; }
+    #resultado { margin-top: 15px; display: none; }
+    .veredicto { font-weight: bold; text-transform: uppercase; }
+    .precio { font-size: 20px; font-weight: 900; color: #1e293b; }
+  </style>
+</head>
+<body>
+  <h2>El Decisor </h2>
+  <p id="url-actual" style="font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">...</p>
+  
+  <button id="btn-analizar" class="btn">ANALIZAR ESTA PÁGINA</button>
+
+  <div id="resultado">
+    <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+      <div class="veredicto" id="veredicto-texto">...</div>
+      <div class="precio" id="precio-texto">...</div>
+    </div>
+    <a href="#" id="link-completo" target="_blank" style="font-size: 12px; color: #4F46E5;">Ver análisis completo y alternativas &rarr;</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

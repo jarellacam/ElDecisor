@@ -29,15 +29,11 @@ async def obtener_analisis_por_slug(slug_buscar: str):
     return respuesta.data[0] if respuesta.data else None
 
 def crear_slug(texto: str) -> str:
-    """Genera un identificador limpio para la URL (Slug)"""
-    if not texto: return "sin-titulo"
-    # 1. Normalización para quitar acentos
-    texto = unicodedata.normalize('NFD', texto)
-    texto = texto.encode('ascii', 'ignore').decode('utf-8')
-    # 2. Minúsculas y limpieza de símbolos
-    texto = re.sub(r'[^a-z0-9]+', '-', texto.lower())
-    # 3. Limpiar guiones de los extremos
-    return texto.strip('-')
+    texto = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode('utf-8')
+    texto = texto.lower()
+    texto = re.sub(r'[^a-z0-9]+', '-', texto)
+    texto = texto.strip('-')
+    return texto[:80] 
 
 async def guardar_nuevo_analisis(url: str, titulo: str, resultado_ia: dict, precio: str = "No detectado"):
     """
