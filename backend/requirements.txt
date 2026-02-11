@@ -5,11 +5,11 @@ python-dotenv==1.0.0
 
 # --- IA y Procesamiento ---
 openai==1.3.5
-# anthropic==0.5.0 (Descomenta si usas Claude)
+# anthropic==0.5.0
 
 # --- Automatización y Scrapping ---
-requests==2.31.0
 beautifulsoup4==4.12.2
+requests==2.31.0
 
-# --- Base de Datos (Si usas Supabase/PostgreSQL) ---
-supabase==1.2.0"requests==2.31.0" 
+# --- Base de Datos ---
+supabase==1.2.0
