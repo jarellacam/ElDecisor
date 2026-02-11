@@ -1,5 +1,5 @@
 const API_URL = 'https://tu-proyecto-railway.up.railway.app'; // <--- PEGA TU URL DE RAILWAY
-const WEB_URL = 'https://el-decisor.vercel.app';             // <--- PEGA TU URL DE VERCEL
+const WEB_URL = 'https://eldecisor.com';             // <--- PEGA TU URL DE VERCEL
 
 // ==========================================
 // 1. ESTILOS (CSS) INYECTADOS

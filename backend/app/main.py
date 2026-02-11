@@ -6,121 +6,116 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
-# Importamos tus servicios (Asegúrate de que existan)
+# Importamos tus servicios
 from app.services.scraper import obtener_datos_url
 from app.services.servicio_ia import analizar_contenido_ia
 from app.services.db_service import supabase
 
-app = FastAPI()
+app = FastAPI(title="El Decisor API")
+
+# --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
+# Sustituye 'tu-dominio.com' por el dominio que has comprado
+origins = [
+    "http://localhost:5173",          # Para pruebas en local
+    "https://el-decisor.vercel.app",  # Tu URL de Vercel (por si acaso)
+    "https://eldecisor.com",          # TU DOMINIO REAL
+    "https://www.eldecisor.com",      # TU DOMINIO CON WWW
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # En producción cambia esto por tu dominio real
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# MODELOS DE DATOS
+# --- MODELOS DE DATOS ---
 class AnalisisRequest(BaseModel):
     url: str
 
 class SuscripcionRequest(BaseModel):
     email: str
     url: str
-    slug: str | None = None 
+    slug: Optional[str] = None 
 
-# CREADOR DE SLUGS 
+# --- UTILIDADES ---
 def crear_slug(texto: str) -> str:
-    """Convierte 'La Huérfana' en 'la-huerfana' sin caracteres raros"""
-    if not texto: return "producto-sin-nombre"
-    # (quitar tildes: é -> e, ñ -> n)
+    """Genera una URL amigable basada en el título"""
+    if not texto: return "producto"
     texto = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode('utf-8')
-    # Convertir a minúsculas
     texto = texto.lower()
-    # Reemplazar todo lo que no sea letra o número por guiones
     texto = re.sub(r'[^a-z0-9]+', '-', texto)
-    # Quitar guiones extra
-    texto = texto.strip('-')
-    return texto[:80]
+    return texto.strip('-')[:80]
 
-# ENDPOINTS 
+# --- ENDPOINTS ---
 
 @app.get("/")
 def read_root():
-    return {"status": "El Decisor API funcionando 🚀"}
+    return {"status": "API de El Decisor Online en dominio propio"}
 
 @app.post("/api/analizar")
 async def analizar_url(request: AnalisisRequest):
     url = request.url.strip()
     
-    # Comprobar caché con VALIDACIÓN
+    # 1. Comprobar caché
     try:
         existente = supabase.table("analisis").select("*").eq("url", url).execute()
-        if existente.data and len(existente.data) > 0:
+        if existente.data:
             cache = existente.data[0]
-            # Solo devolvemos el caché si tiene slug y análisis válido.
-            # Si es un dato viejo corrupto, lo ignoramos y re-analizamos.
-            if cache.get('slug') and cache.get('analisis_ia') and cache.get('datos_web'):
-                print(f"Recuperado de caché (Válido): {url}")
+            if cache.get('slug') and cache.get('analisis_ia'):
                 return cache
             else:
-                print(f"Caché corrupto detectado para {url}. Re-analizando...")
+                # Borrar si está corrupto
                 supabase.table("analisis").delete().eq("id", cache['id']).execute()
-                
     except Exception as e:
-        print(f"Nota: No se pudo consultar caché ({e})")
+        print(f"Caché omitido: {e}")
 
-
-    # Si no existe, SCRAPING
-    print(f" Scrapeando: {url}")
+    # 2. Scraping
     datos_web = await obtener_datos_url(url)
-    
     if "error" in datos_web:
         raise HTTPException(status_code=400, detail=datos_web["error"])
 
-    # ANÁLISIS IA
-    print("Consultando a Gemini...")
+    # 3. Análisis IA
     analisis_ia = await analizar_contenido_ia(datos_web['contenido'])
-    
     if "error" in analisis_ia:
-        raise HTTPException(status_code=503, detail=analisis_ia["error"])
+        raise HTTPException(status_code=503, detail="La IA está saturada. Inténtalo de nuevo.")
 
-    # GENERAR SLUG LIMPIO
+    # 4. Guardar y retornar
     slug = crear_slug(datos_web['titulo'])
-
-    # GUARDAR EN SUPABASE
     nuevo_analisis = {
         "url": url,
         "slug": slug,
-        "datos_web": datos_web,     # JSONB en Supabase
-        "analisis_ia": analisis_ia, # JSONB en Supabase
+        "datos_web": datos_web,
+        "analisis_ia": analisis_ia,
         "votos": 0
     }
     
     try:
         guardado = supabase.table("analisis").insert(nuevo_analisis).execute()
-        # Devolvemos el objeto completo (importante para que el frontend tenga el slug)
-        if guardado.data:
-            return guardado.data[0]
-        else:
-            return nuevo_analisis # Fallback si supabase no devuelve data
-            
+        return guardado.data[0] if guardado.data else nuevo_analisis
     except Exception as e:
-        print(f"Error guardando en DB: {e}")
-        # Si falla la DB, devolvemos el resultado igual para que el usuario lo vea
+        print(f"Error DB: {e}")
         return nuevo_analisis
 
 @app.get("/api/analisis/{slug}")
 async def obtener_analisis(slug: str):
+    response = supabase.table("analisis").select("*").eq("slug", slug).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Análisis no encontrado")
+    return response.data[0]
+
+@app.get("/api/tendencias")
+async def obtener_tendencias():
     try:
-        # Buscamos por slug exacto
-        response = supabase.table("analisis").select("*").eq("slug", slug).execute()
-        if not response.data:
-            raise HTTPException(status_code=404, detail="Análisis no encontrado")
-        return response.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=404, detail="Error buscando análisis")
+        response = supabase.table("analisis").select("*").order('created_at', desc=True).limit(10).execute()
+        validos = [
+            item for item in response.data 
+            if item.get('datos_web', {}).get('titulo') and item.get('analisis_ia')
+        ]
+        return validos[:4]
+    except:
+        return []
 
 @app.post("/api/suscribir")
 async def suscribir_usuario(request: SuscripcionRequest):
@@ -131,50 +126,7 @@ async def suscribir_usuario(request: SuscripcionRequest):
             "slug_producto": request.slug
         }
         supabase.table("suscripciones").insert(datos).execute()
-        return {"msg": "Suscripción guardada"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/tendencias")
-async def obtener_tendencias():
-    try:
-        # Pedimos los últimos 10 (para tener margen si hay basura)
-        response = supabase.table("analisis").select("*").order('created_at', desc=True).limit(10).execute()
-        raw_data = response.data
-        
-        # FILTRO PYTHON: Solo aceptamos si tiene título real y veredicto
-        validos = []
-        for item in raw_data:
-            titulo = item.get('datos_web', {}).get('titulo', '')
-            veredicto = item.get('analisis_ia', {}).get('veredicto_valor', '')
-            
-            # Condición de calidad: Debe tener título y no ser el default
-            if titulo and titulo != "Producto sin nombre" and veredicto:
-                validos.append(item)
-                
-        # Devolvemos solo los 4 primeros válidos
-        return validos[:4]
-        
-    except Exception as e:
-        print(f"Error tendencias: {e}")
-        return []
-    
-@app.post("/api/suscribir")
-async def suscribir_usuario(request: SuscripcionRequest):
-    try:
-        # El diccionario debe usar las claves EXACTAS de tus columnas en Supabase
-        datos = {
-            "email": request.email,
-            "url_producto": request.url,
-            "slug_producto": request.slug # Ahora sí funcionará porque creamos la columna
-        }
-        
-        # Insertamos en la tabla
-        supabase.table("suscripciones").insert(datos).execute()
-        
-        return {"mensaje": "Suscripción guardada correctamente"}
-        
+        return {"mensaje": "¡Perfecto! Te avisaremos si el precio baja. 🕵️‍♂️"}
     except Exception as e:
         print(f"Error suscripción: {e}")
-        # Importante: Imprimimos el error real en la consola para verlo si falla
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="No se pudo guardar la suscripción.")
