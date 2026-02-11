@@ -1,0 +1,21 @@
+name: Ejecutar Analizador Diario
+on:
+  schedule:
+    - cron: '0 9 * * *' # Se ejecuta todos los días a las 09:00 AM
+  workflow_dispatch: # Permite ejecutarlo a mano desde GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Instalar dependencias
+        run: pip install -r backend/requirements.txt
+      - name: Ejecutar Agente
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: python backend/automation/agente_b.py
