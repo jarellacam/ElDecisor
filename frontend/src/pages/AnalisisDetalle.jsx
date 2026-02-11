@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import '../index.css';
+// IMPORTANTE: El path ahora apunta a helpers/links
 import { generateAffiliateLink } from '../helpers/links';
+
 export default function AnalisisDetalle() {
   const { state } = useLocation();
   const { slug } = useParams();
@@ -45,8 +47,6 @@ export default function AnalisisDetalle() {
 
   // GENERAR LINKS MONETIZADOS
   const linkPrincipal = generateAffiliateLink(urlOriginal);
-  
-  // Links de búsqueda alternativa (SIEMPRE monetizados con nuestra utilidad)
   const linkSearchTemu = generateAffiliateLink(`https://www.temu.com/search_result.html?search_key=${encodeURIComponent(titulo)}`);
   const linkSearchShein = generateAffiliateLink(`https://www.shein.com/pdsearch/${encodeURIComponent(titulo)}`);
 
@@ -70,7 +70,6 @@ export default function AnalisisDetalle() {
                  {precio !== "No detectado" ? precio : "Consultar Precio"}
                </span>
                
-               {/* BOTÓN PRINCIPAL DINÁMICO */}
                <a 
                  href={linkPrincipal} 
                  target="_blank" 
@@ -83,7 +82,6 @@ export default function AnalisisDetalle() {
           </header>
 
           <div className="grid lg:grid-cols-3 gap-12">
-            {/* IZQUIERDA: RESUMEN IA */}
             <div className="lg:col-span-2 space-y-8">
               <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Veredicto de la IA</h3>
@@ -101,13 +99,10 @@ export default function AnalisisDetalle() {
               </div>
             </div>
 
-            {/* DERECHA: ALTERNATIVAS MONETIZADAS */}
             <aside className="lg:col-span-1 space-y-6">
               <div className="bg-white p-6 rounded-[2rem] border-2 border-indigo-50 shadow-xl">
                 <h3 className="font-black text-slate-800 mb-6 border-b pb-4">Comparar en otras tiendas</h3>
-
                 <div className="space-y-4">
-                  {/* Alternativa Temu (Si no estamos ya en Temu) */}
                   {!esTemu && (
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <div className="flex justify-between items-center mb-3">
@@ -120,7 +115,6 @@ export default function AnalisisDetalle() {
                     </div>
                   )}
 
-                  {/* Alternativa Shein (Si no estamos ya en Shein) */}
                   {!esShein && (
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <div className="flex justify-between items-center mb-3">
