@@ -46,7 +46,7 @@ document.head.appendChild(style);
 // 2. CREACIÓN DEL BOTÓN FLOTANTE
 // ==========================================
 const boton = document.createElement("button");
-boton.innerHTML = `<span style="font-size: 18px;">🧠</span> Analizar Chollo`;
+boton.innerHTML = `<span style="font-size: 18px;"></span> Analizar Chollo`;
 boton.id = "el-decisor-btn";
 
 Object.assign(boton.style, {
@@ -81,8 +81,10 @@ boton.addEventListener("click", async () => {
     
     const response = await fetch(`${API_URL}/api/analizar`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ url: currentUrl })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: currentUrl }),
+      mode: 'cors', // Aseguramos modo CORS
+      credentials: 'omit' // <--- ESTO evita el conflicto con el backend
     });
 
     const data = await response.json();

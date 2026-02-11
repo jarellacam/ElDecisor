@@ -15,21 +15,27 @@ app = FastAPI(title="El Decisor API")
 
 # --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
 # Sustituye 'tu-dominio.com' por el dominio que has comprado
+# --- CONFIGURACIÓN DE CORS REFORZADA ---
 origins = [
     "http://localhost:5173",
     "https://eldecisor.com",
     "https://www.eldecisor.com",
     "https://el-decisor.vercel.app",
+    # Añadimos los esquemas de extensiones de Chrome por seguridad
+    "chrome-extension://*", 
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    # Opción A: Usar la lista 'origins' en lugar de "*"
+    allow_origins=origins, 
+    # Opción B: Si quieres dejar "*", pon allow_credentials=False
+    # allow_origins=["*"],
+    # allow_credentials=False, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # --- MODELOS DE DATOS ---
 class AnalisisRequest(BaseModel):
     url: str
