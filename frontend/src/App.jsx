@@ -1,26 +1,29 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import AnalisisDetalle from './pages/AnalisisDetalle';
-import Policy from './pages/Policy'; 
+import Policy from './pages/Policy';
+import Footer from './components/Footer'; 
 import { HelmetProvider } from 'react-helmet-async'; 
 
 function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
-        <Routes>
-          {/* Página principal */}
-          <Route path="/" element={<Home />} />
+        {/* Usamos un div con flex para que el footer siempre esté abajo */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           
-          {/* Detalle del análisis */}
-          <Route path="/analisis/:slug" element={<AnalisisDetalle />} />
+          <div style={{ flex: 1 }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/analisis/:slug" element={<AnalisisDetalle />} />
+              <Route path="/privacidad" element={<Policy />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </div>
 
-          {/* Ruta de privacidad (el path sigue siendo /privacidad) */}
-          <Route path="/privacidad" element={<Policy />} />
+          <Footer /> {/*  */}
           
-          {/* Catch-all para errores 404 */}
-          <Route path="*" element={<Home />} />
-        </Routes>
+        </div>
       </BrowserRouter>
     </HelmetProvider>
   );

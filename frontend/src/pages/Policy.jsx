@@ -27,7 +27,7 @@ const Policy = () => {
 
       <section>
         <h2>4. Contacto</h2>
-        <p>Si tienes dudas sobre tu privacidad, puedes contactarnos en: <strong>[TU_EMAIL_AQUÍ]</strong></p>
+        <p>Si tienes dudas sobre tu privacidad, puedes contactarnos en: <strong>[soporte@eldecisor.com]</strong></p>
       </section>
 
       <div style={{ marginTop: '40px' }}>
