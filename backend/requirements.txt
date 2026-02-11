@@ -6,3 +6,5 @@ beautifulsoup4==4.12.2
 requests==2.31.0
 supabase==1.2.0
 google-generativeai
+httpx[http2]
+h2
