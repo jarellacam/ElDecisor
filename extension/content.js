@@ -1,4 +1,4 @@
-const API_URL = 'https://tu-proyecto-railway.up.railway.app'; // <--- PEGA TU URL DE RAILWAY
+const API_URL = 'https://eldecisor-production.up.railway.app';
 const WEB_URL = 'https://eldecisor.com';             // <--- PEGA TU URL DE VERCEL
 
 // ==========================================

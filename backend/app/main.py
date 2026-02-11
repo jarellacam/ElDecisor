@@ -16,10 +16,10 @@ app = FastAPI(title="El Decisor API")
 # --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
 # Sustituye 'tu-dominio.com' por el dominio que has comprado
 origins = [
-    "http://localhost:5173",          # Para pruebas en local
-    "https://el-decisor.vercel.app",  # Tu URL de Vercel (por si acaso)
-    "https://eldecisor.com",          # TU DOMINIO REAL
-    "https://www.eldecisor.com",      # TU DOMINIO CON WWW
+    "http://localhost:5173",
+    "https://eldecisor.com",
+    "https://www.eldecisor.com",
+    "https://el-decisor.vercel.app",
 ]
 
 app.add_middleware(
