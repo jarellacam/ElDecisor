@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Privacidad = () => {
+const Policy = () => {
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif', lineHeight: '1.6', color: '#333' }}>
       <h1>Política de Privacidad - El Decisor</h1>
@@ -27,7 +27,7 @@ const Privacidad = () => {
 
       <section>
         <h2>4. Contacto</h2>
-        <p>Si tienes dudas sobre tu privacidad, puedes contactarnos en: <strong>[TU_EMAIL@EJEMPLO.COM]</strong></p>
+        <p>Si tienes dudas sobre tu privacidad, puedes contactarnos en: <strong>[TU_EMAIL_AQUÍ]</strong></p>
       </section>
 
       <div style={{ marginTop: '40px' }}>
@@ -37,4 +37,4 @@ const Privacidad = () => {
   );
 };
 
-export default Privacidad;
+export default Policy;
