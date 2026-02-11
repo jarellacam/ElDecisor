@@ -1,22 +1,27 @@
-name: Ejecutar Analizador Diario
+name: Agente V2 (Sin Errores)
+
 on:
   schedule:
-    - cron: '0 9 * * *' # Se ejecuta todos los días a las 09:00 AM
-  workflow_dispatch: # Permite ejecutarlo a mano desde GitHub
+    - cron: '0 9 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Instalar dependencias
+      
+      # INSTALACIÓN DIRECTA (SIN ARCHIVO)
+      - name: Instalar Dependencias
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 openai fastapi uvicorn python-dotenv supabase
+
       - name: Ejecutar Agente
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
