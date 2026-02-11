@@ -7,9 +7,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 # Importamos tus servicios
-from app.services.scraper import obtener_datos_url
-from app.services.servicio_ia import analizar_contenido_ia
-from app.services.db_service import supabase
+from services.scraper import obtener_datos_url
+from services.servicio_ia import analizar_contenido_ia
+from services.db_service import supabase
 
 app = FastAPI(title="El Decisor API")
 
