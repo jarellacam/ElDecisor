@@ -125,13 +125,13 @@ export default function Home() {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
-          Deja de dudar. <br/>
-          <span className="text-indigo-600">Empieza a saber.</span>
+          No compres con los ojos cerrados.  <br/>
+          <span className="text-indigo-600">Compra con Rayos X.</span>
         </h1>
         
         <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl leading-relaxed">
-          Pega el enlace de cualquier producto y nuestra IA analizará 
-          reseñas ocultas, precios históricos y letra pequeña en segundos.
+          Análisis forense de cualquier producto en segundos. 
+          La letra pequeña, ahora en negrita.
         </p>
 
         {/* BUSCADOR */}
