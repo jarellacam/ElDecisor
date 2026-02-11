@@ -2,39 +2,47 @@
 
 const IDS = {
   amazon: "eldecisor-20", 
-  shein: "3J3AL",        // ✅ Tu código de referido
-  temu: "tu_code_temu"   
+  shein: "3J3AL",
+  temu: "tu_id_temu" // Cámbialo cuando lo tengas
 };
 
-export const generateAffiliateLink = (originalUrl) => {
-  if (!originalUrl) return "#";
+export const generateAffiliateLink = (urlStr) => {
+  if (!urlStr) return "#";
 
   try {
-    const url = new URL(originalUrl);
-    const domain = url.hostname;
+    // 1. Limpieza básica y validación
+    const cleanUrl = urlStr.startsWith('http') ? urlStr : `https://${urlStr}`;
+    const url = new URL(cleanUrl);
+    const domain = url.hostname.toLowerCase();
 
-    // --- LÓGICA PARA SHEIN ---
-    if (domain.includes("shein")) {
-      // 1. Quitamos todos los parámetros que ya traiga la URL
-      const baseUrl = originalUrl.split('?')[0];
-      
-      // 2. Construimos el enlace con tus parámetros de afiliado
-      // Usamos 'url_from' y 'aff_code' para asegurar la comisión
-      return `${baseUrl}?url_from=${IDS.shein}&aff_code=${IDS.shein}`;
-    }
-
-    // --- LÓGICA PARA AMAZON ---
+    // --- CASO AMAZON ---
     if (domain.includes("amazon")) {
-      const asinMatch = originalUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
+      // Intentamos sacar el ASIN para un link más limpio
+      const asinMatch = cleanUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
       if (asinMatch && asinMatch[1]) {
         return `https://www.amazon.es/dp/${asinMatch[1]}?tag=${IDS.amazon}`;
       }
+      url.searchParams.set("tag", IDS.amazon);
+      return url.toString();
     }
 
-    // Si no es ninguna de las anteriores, devolver la original
-    return originalUrl;
+    // --- CASO SHEIN (Funciona para productos y para BÚSQUEDAS) ---
+    if (domain.includes("shein")) {
+      // Shein usa url_from y aff_code para rastrear sesiones de búsqueda también
+      url.searchParams.set("url_from", IDS.shein);
+      url.searchParams.set("aff_code", IDS.shein);
+      return url.toString();
+    }
 
+    // --- CASO TEMU ---
+    if (domain.includes("temu")) {
+      url.searchParams.set("referral_code", IDS.temu);
+      return url.toString();
+    }
+
+    return cleanUrl;
   } catch (error) {
-    return originalUrl;
+    console.error("Error en affiliate link:", error);
+    return urlStr;
   }
 };
