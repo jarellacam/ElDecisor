@@ -13,9 +13,12 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // CAMBIO: Usamos ruta relativa para conectar con el backend en Vercel
+    // CAMBIO: Ruta relativa directa para Vercel
     fetch('/api/tendencias')
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) return []; // Si falla, devolvemos lista vacía
+        return res.json();
+      })
       .then(data => { if (Array.isArray(data)) setTendencias(data); })
       .catch(err => console.log("Error tendencias", err));
   }, []);
@@ -27,19 +30,35 @@ export default function Home() {
     setError(null);
 
     try {
-      // CAMBIO: Usamos ruta relativa /api/analizar
+      // CAMBIO: Ruta relativa /api/analizar
       const response = await fetch('/api/analizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url: url.trim() })
       });
+
+      // 🛡️ PROTECCIÓN: Verificamos si la respuesta es válida antes de parsear JSON
+      if (!response.ok) {
+        // Si no es un 200 OK, leemos la respuesta como texto para depurar
+        const errorText = await response.text();
+        console.error("Respuesta fallida del servidor:", errorText);
+        
+        // Intentamos ver si hay un detalle en el error (si es JSON) o lanzamos el status
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.detail || `Error ${response.status}: Servidor no disponible`);
+        } catch {
+          throw new Error(`Error ${response.status}: El servidor no respondió correctamente`);
+        }
+      }
+
+      // Si llegamos aquí, la respuesta es OK y debería ser JSON
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Error al conectar");
 
       if (data.slug) {
         navigate(`/analisis/${data.slug}`, { state: { resultado: data } });
       } else {
-        throw new Error("ID inválido");
+        throw new Error("El servidor no generó un identificador para este análisis");
       }
     } catch (err) {
       setError(err.message);
@@ -166,7 +185,6 @@ export default function Home() {
           </form>
         </div>
 
-        {/* --- BOTÓN DE DESCARGA EXTENSIÓN --- */}
         <div className="mt-12 animate-pulse hover:animate-none transition-all">
           <p className="text-sm text-slate-400 font-bold mb-3 uppercase tracking-wider">
             ¿Compras mucho en Amazon?
@@ -182,13 +200,12 @@ export default function Home() {
         </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-center gap-3 animate-pulse">
+          <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-center gap-3">
             <AlertTriangle size={20} />
             <span className="font-bold text-sm">{error}</span>
           </div>
         )}
 
-        {/* TENDENCIAS */}
         {tendencias.length > 0 && (
           <div className="mt-20 w-full text-left">
             <div className="flex items-center gap-2 mb-6">
