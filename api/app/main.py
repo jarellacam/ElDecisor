@@ -1,30 +1,28 @@
 import os
 import re
 import unicodedata
+import sys
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
-# Importamos tus servicios
-from app.services.scraper import obtener_datos_url
-from app.services.servicio_ia import analizar_contenido_ia
-from app.services.db_service import supabase
+# --- PARCHE DE RUTAS PARA VERCEL ---
+# Esto obliga a Python a encontrar la carpeta 'services' que está al lado de este archivo
+BASE_DIR = Path(__file__).resolve().parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+# --- IMPORTACIONES CORREGIDAS ---
+# Eliminamos el prefijo 'app.' porque en Vercel la ruta raíz de la función es 'api/app/'
+from services.scraper import obtener_datos_url
+from services.servicio_ia import analizar_contenido_ia
+from services.db_service import supabase
 
 app = FastAPI(title="El Decisor API")
 
 # --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
-# Sustituye 'tu-dominio.com' por el dominio que has comprado
-# --- CONFIGURACIÓN DE CORS REFORZADA ---
-origins = [
-    "http://localhost:5173",
-    "https://eldecisor.com",
-    "https://www.eldecisor.com",
-    "https://el-decisor.vercel.app",
-    # Añadimos los esquemas de extensiones de Chrome por seguridad
-    "chrome-extension://*", 
-]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -32,6 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # --- MODELOS DE DATOS ---
 class AnalisisRequest(BaseModel):
     url: str
