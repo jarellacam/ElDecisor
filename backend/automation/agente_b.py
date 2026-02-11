@@ -4,7 +4,6 @@ import time
 
 # --- CONFIGURACIÓN DINÁMICA ---
 API_URL = os.getenv("VITE_API_URL", "https://eldecisor.com/api/analizar")
-
 def agente_a_buscador():
     """
     Este es el Agente A. Por ahora tiene una lista, pero aquí es donde 
