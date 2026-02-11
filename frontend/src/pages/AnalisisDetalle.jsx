@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; 
 import '../index.css';
-import { generateAffiliateLink } from '../utils/affiliate';
-
+import { generateAffiliateLink } from '../helpers/links';
 export default function AnalisisDetalle() {
   const { state } = useLocation();
   const { slug } = useParams();
