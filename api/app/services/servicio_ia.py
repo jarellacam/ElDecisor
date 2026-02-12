@@ -13,7 +13,7 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    print("❌ ERROR CRÍTICO: No se encontró la variable GOOGLE_API_KEY")
+    print("ERROR CRÍTICO: No se encontró la variable GEMINI_API_KEY")
 
 genai.configure(api_key=api_key)
 
