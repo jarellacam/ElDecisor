@@ -18,7 +18,7 @@ genai.configure(api_key=api_key)
 
 # --- CAMBIO DE MODELO ---
 # Usamos 'gemini-pro' que es el modelo estándar (v1.0) y funciona en todas las versiones de la API.
-modelo = genai.GenerativeModel('gemini-2.0-flash')
+modelo = genai.GenerativeModel('gemini-1.5-flash')
 
 async def analizar_contenido_ia(texto_sucio: str):
     texto_breve = texto_sucio[:4000]
