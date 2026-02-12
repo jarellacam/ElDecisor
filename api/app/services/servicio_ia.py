@@ -7,38 +7,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Usamos la clave que ya sabemos que funciona
+# Configuramos la clave que ya tenemos validada en True
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# Usamos 1.5-flash que es el más rápido
-modelo = genai.GenerativeModel('gemini-1.5-flash')
+# --- EL CAMBIO CLAVE ---
+# Usamos el nombre completo con el prefijo 'models/' 
+# Esto ayuda a que la API lo localice correctamente en cualquier versión (v1 o v1beta)
+modelo = genai.GenerativeModel('models/gemini-1.5-flash')
 
 async def analizar_contenido_ia(texto_sucio: str):
-    # Reducimos un poco el texto para no saturar la memoria
-    texto_breve = texto_sucio[:3000] 
+    texto_breve = texto_sucio[:3500] 
     
     prompt = f"""
-    Analiza este producto y responde SOLO un JSON puro, sin bloques de código:
+    Eres un analista experto. Analiza este producto y responde ÚNICAMENTE con JSON puro:
     {{
         "tipo_contenido": "producto",
-        "nombre_producto": "Nombre",
-        "puntos_clave": ["punto 1", "punto 2"],
+        "nombre_producto": "Nombre claro",
+        "puntos_clave": ["ventaja 1", "ventaja 2", "desventaja 1"],
         "veredicto": "recomendado",
-        "resumen": "resumen"
+        "resumen": "resumen breve"
     }}
     Texto: "{texto_breve}"
     """
 
     try:
-        # Llamada directa
+        # Llamada asíncrona a la IA
         respuesta = await modelo.generate_content_async(prompt)
         
-        # Si la respuesta está vacía o bloqueada
         if not respuesta.text:
-            return {"error": "Google bloqueó la respuesta por seguridad o contenido."}
+            return {"error": "La IA devolvió una respuesta vacía."}
 
-        # Limpieza manual de la respuesta
+        # Limpiamos posibles bloques de código que la IA suele añadir
         texto = respuesta.text
         if "```" in texto:
             texto = texto.split("```")[1]
@@ -48,7 +48,7 @@ async def analizar_contenido_ia(texto_sucio: str):
         return json.loads(texto.strip())
 
     except exceptions.ResourceExhausted:
-        return {"error": "Cuota de Google agotada. Espera 60 segundos."}
+        return {"error": "Cuota agotada (429). Espera un minuto."}
     except Exception as e:
-        # Esto nos dirá si es un 404, un 400 o qué
+        # Aquí capturaremos el 404 si vuelve a ocurrir
         return {"error": str(e)}
