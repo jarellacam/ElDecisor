@@ -5,54 +5,42 @@ import google.generativeai as genai
 from google.api_core import exceptions
 from dotenv import load_dotenv
 
-# Cargamos variables .env
 load_dotenv()
 
-# Usamos la variable que definiste en Vercel
+# Usamos GEMINI_API_KEY que es la que tienes en True en el debug
 api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    print("ERROR CRÍTICO: No se encontró la variable GEMINI_API_KEY")
-
 genai.configure(api_key=api_key)
 
-# --- CAMBIO DE MODELO ---
-# Usamos 'gemini-pro' que es el modelo estándar (v1.0) y funciona en todas las versiones de la API.
-modelo = genai.GenerativeModel('gemini-1.5-flash')
+# Usamos 'gemini-pro': es el más estable y con cuota gratuita más generosa
+modelo = genai.GenerativeModel('gemini-pro')
 
 async def analizar_contenido_ia(texto_sucio: str):
-    texto_breve = texto_sucio[:4000]
-    max_reintentos = 3
+    texto_breve = texto_sucio[:3500] 
     
     prompt = f"""
-    Eres un experto analista de productos. Analiza este texto de una web de producto:
-    "{texto_breve}"
-    
-    Responde ÚNICAMENTE con un JSON válido (sin markdown ```json) con esta estructura:
+    Analiza este producto y responde SOLO en JSON:
     {{
         "tipo_contenido": "producto",
-        "nombre_producto": "Nombre corto y claro",
-        "puntos_clave": ["Lo bueno 1", "Lo bueno 2", "Lo malo 1"],
-        "veredicto": "Compra recomendada" o "Buscar alternativa",
-        "resumen": "Resumen en 2 frases"
+        "nombre_producto": "Nombre",
+        "puntos_clave": ["punto 1", "punto 2"],
+        "veredicto": "recomendado/no recomendado",
+        "resumen": "resumen corto"
     }}
+    Texto: "{texto_breve}"
     """
 
-    for intento in range(max_reintentos):
-        try:
-            # Llamada asíncrona
-            respuesta = await modelo.generate_content_async(prompt)
-            texto_respuesta = respuesta.text
+    try:
+        # Generación de contenido
+        respuesta = await modelo.generate_content_async(prompt)
+        
+        # Limpieza de markdown
+        limpio = respuesta.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(limpio)
 
-            # Limpieza de seguridad
-            limpio = texto_respuesta.replace("```json", "").replace("```", "").strip()
-            
-            return json.loads(limpio)
-
-        except Exception as e:
-            print(f"Intento {intento+1} fallido: {e}")
-            if intento == max_reintentos - 1:
-                return {"error": "La IA no pudo procesar este producto."}
-            await asyncio.sleep(2)
-
-    return {"error": "Error desconocido en IA"}
+    except exceptions.ResourceExhausted:
+        # Error 429: Cuota agotada
+        return {"error": "IA saturada (límite de cuota gratuita). Reintenta en 1 minuto."}
+    except Exception as e:
+        # Cualquier otro error (404, etc)
+        print(f"Error IA: {e}")
+        return {"error": "La IA no ha podido procesar este enlace."}
