@@ -7,40 +7,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Usamos la clave GEMINI_API_KEY que ya validamos como True
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# --- SISTEMA DE SELECCIÓN AUTOMÁTICA ---
-def seleccionar_modelo():
-    try:
-        modelos_disponibles = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        print(f"🔍 Modelos detectados en tu cuenta: {modelos_disponibles}")
-        
-        # Prioridad 1: Flash 1.5 (el que queremos por cuota)
-        for m in modelos_disponibles:
-            if 'gemini-1.5-flash' in m:
-                return m
-        
-        # Prioridad 2: Flash 2.0 (el que te dio 429 antes)
-        for m in modelos_disponibles:
-            if 'gemini-2.0-flash' in m:
-                return m
-                
-        return 'gemini-pro' # Último recurso
-    except Exception as e:
-        print(f"⚠️ No se pudo listar modelos: {e}")
-        return 'gemini-1.5-flash' # Intento por defecto
-
-# Configuramos el modelo dinámicamente
-nombre_modelo = seleccionar_modelo()
-print(f"✅ Usando modelo: {nombre_modelo}")
-modelo = genai.GenerativeModel(nombre_modelo)
+# --- EL CAMBIO DEFINITIVO ---
+# Usamos el alias '-latest'. Esto obliga a Google a darte la versión 
+# más compatible con tu librería actual, saltándose el error 404.
+modelo = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 async def analizar_contenido_ia(texto_sucio: str):
+    # Recorte preventivo para no saturar la memoria de la función
     texto_breve = texto_sucio[:3500] 
     
     prompt = f"""
-    Responde SOLO JSON puro:
+    Eres un analista experto. Analiza este texto de producto y responde ÚNICAMENTE con JSON puro:
     {{
         "tipo_contenido": "producto",
         "nombre_producto": "Nombre",
@@ -52,11 +33,13 @@ async def analizar_contenido_ia(texto_sucio: str):
     """
 
     try:
+        # Generación de contenido
         respuesta = await modelo.generate_content_async(prompt)
         
-        if not respuesta.text:
-            return {"error": "Respuesta vacía de la IA."}
+        if not respuesta or not respuesta.text:
+            return {"error": "La IA no devolvió texto. Posible bloqueo de contenido."}
 
+        # Limpieza de markdown
         texto = respuesta.text
         if "```" in texto:
             texto = texto.split("```")[1].replace("json", "").strip()
@@ -64,6 +47,12 @@ async def analizar_contenido_ia(texto_sucio: str):
         return json.loads(texto.strip())
 
     except exceptions.ResourceExhausted:
-        return {"error": "Cuota 429 agotada. Google te pide esperar un poco."}
+        # Este es el error 429 que te salía antes
+        return {"error": "Cuota agotada. Google pide esperar 60 segundos."}
     except Exception as e:
-        return {"error": str(e)}
+        # Esto nos devolverá el error exacto si vuelve a fallar
+        error_msg = str(e)
+        # Si sigue dando 404 con el 1.5, intentamos el 2.0 como plan de rescate
+        if "404" in error_msg:
+            return {"error": "Error de versión de modelo. Intenta con Gemini 2.0."}
+        return {"error": error_msg}
