@@ -1,59 +1,41 @@
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import re
-import unicodedata
 
 load_dotenv()
 
+# Inicialización del cliente
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
+
+if not url or not key:
+    print("❌ ERROR: Faltan las credenciales de Supabase en las variables de entorno.")
+
 supabase: Client = create_client(url, key)
 
 async def buscar_analisis_existente(url_buscar: str):
-    """Busca si ya analizamos esta URL antes para no gastar IA de nuevo."""
-    respuesta = supabase.table("analisis").select("*").eq("url", url_buscar).execute()
-    return respuesta.data[0] if respuesta.data else None
+    """Consulta rápida para evitar duplicados."""
+    try:
+        res = supabase.table("analisis").select("*").eq("url", url_buscar).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"Error al buscar en DB: {e}")
+        return None
 
-async def guardar_nuevo_analisis(url: str, titulo: str, resultado_ia: dict):
-    """Guarda el resultado en la base de datos."""
-    data = {
-        "url": url,
-        "titulo": titulo,
-        "resultado_ia": resultado_ia
-    }
-    supabase.table("analisis").insert(data).execute()
+async def guardar_nuevo_analisis(data: dict):
+    """Guarda un diccionario completo de análisis en la tabla."""
+    try:
+        res = supabase.table("analisis").insert(data).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"Error al insertar en DB: {e}")
+        return None
 
 async def obtener_analisis_por_slug(slug_buscar: str):
-    respuesta = supabase.table("analisis").select("*").eq("slug", slug_buscar).execute()
-    return respuesta.data[0] if respuesta.data else None
-
-def crear_slug(texto: str) -> str:
-    texto = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode('utf-8')
-    texto = texto.lower()
-    texto = re.sub(r'[^a-z0-9]+', '-', texto)
-    texto = texto.strip('-')
-    return texto[:80] 
-
-async def guardar_nuevo_analisis(url: str, titulo: str, resultado_ia: dict, precio: str = "No detectado"):
-    """
-    Guarda el análisis en Supabase. 
-    Ahora acepta el argumento 'precio'.
-    """
-    slug_limpio = crear_slug(titulo)
-    
-    data = {
-        "url": url,
-        "titulo": titulo,
-        "resultado_ia": resultado_ia,
-        "slug": slug_limpio,
-        "precio": precio  
-    }
-    
+    """Busca un análisis específico por su URL amigable (slug)."""
     try:
-        # Insertamos en la tabla 'analisis'
-        res = supabase.table("analisis").insert(data).execute()
-        return res
+        res = supabase.table("analisis").select("*").eq("slug", slug_buscar).execute()
+        return res.data[0] if res.data else None
     except Exception as e:
-        print(f"Error crítico al guardar en Supabase: {e}")
+        print(f"Error al obtener slug de DB: {e}")
         return None

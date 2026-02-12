@@ -4,19 +4,18 @@ import urllib.parse
 from bs4 import BeautifulSoup
 
 async def obtener_datos_url(url: str):
-    # 1. Limpieza de URL para evitar errores de protocolo
+    # 1. Limpieza de URL
     url = url.strip()
     if not url.startswith("http"):
         url = f"https://www.amazon.es/dp/{url.split('/')[-1]}" if "/dp/" in url else f"https://{url}"
 
-    # 2. API Key de WebScraping.ai
-    # OJO: Asegúrate de que en Vercel la variable se llama EXACTAMENTE así:
-    api_key = os.getenv("WEB_SCRAPING_AI_KEY")
+    # 2. API Key (Asegúrate de que en Vercel se llama WEB_SCRAPING_API_KEY)
+    api_key = os.getenv("WEB_SCRAPING_API_KEY")
     
     if not api_key:
-        return {"error": "Configura la variable WEB_SCRAPING_AI_KEY en Vercel"}
+        return {"error": "Falta la configuración de WEB_SCRAPING_API_KEY"}
 
-    # Construimos la petición al proxy
+    # 3. Configuración del Proxy
     params = {
         "api_key": api_key,
         "url": url,
@@ -27,11 +26,11 @@ async def obtener_datos_url(url: str):
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
-            print(f"📡 Solicitando vía Proxy a: {url}")
+            print(f"📡 Solicitando: {url}")
             response = await client.get(proxy_url)
             
             if response.status_code == 403:
-                return {"error": "Límite de créditos agotado o API Key incorrecta."}
+                return {"error": "Créditos agotados en WebScraping.ai"}
             
             if response.status_code != 200:
                 return {"error": f"Error del Proxy: {response.status_code}"}
@@ -41,8 +40,9 @@ async def obtener_datos_url(url: str):
             titulo = _obtener_titulo(soup)
             precio = _obtener_precio(soup)
             
-            if "Producto sin título" in titulo:
-                return {"error": "Amazon detectó el proxy. Reintentando..."}
+            # Verificación de bloqueo por Amazon
+            if "Producto sin título" in titulo or "captcha" in response.text.lower():
+                return {"error": "Amazon bloqueó el acceso. Intenta con un proxy residencial."}
 
             return {
                 "titulo": titulo,
@@ -59,4 +59,4 @@ def _obtener_titulo(soup):
 
 def _obtener_precio(soup):
     tag = soup.select_one(".a-price .a-offscreen") or soup.select_one(".a-price-whole")
-    return tag.get_text(strip=True) if tag else "Consultar precio"
+    return tag.get_text(strip=True) if tag else "Precio no disponible"

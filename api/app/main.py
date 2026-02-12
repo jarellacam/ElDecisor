@@ -3,26 +3,22 @@ import re
 import unicodedata
 import sys
 from pathlib import Path
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
 
-# --- PARCHE DE RUTAS PARA VERCEL ---
-# Esto obliga a Python a encontrar la carpeta 'services' que está al lado de este archivo
+# Parche de rutas para Vercel
 BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-# --- IMPORTACIONES CORREGIDAS ---
-# Eliminamos el prefijo 'app.' porque en Vercel la ruta raíz de la función es 'api/app/'
 from services.scraper import obtener_datos_url
 from services.servicio_ia import analizar_contenido_ia
 from services.db_service import supabase
 
 app = FastAPI(title="El Decisor API")
 
-# --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -42,7 +38,6 @@ class SuscripcionRequest(BaseModel):
 
 # --- UTILIDADES ---
 def crear_slug(texto: str) -> str:
-    """Genera una URL amigable basada en el título"""
     if not texto: return "producto"
     texto = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode('utf-8')
     texto = texto.lower()
@@ -53,13 +48,13 @@ def crear_slug(texto: str) -> str:
 
 @app.get("/")
 def read_root():
-    return {"status": "API de El Decisor Online en dominio propio"}
+    return {"status": "API Online", "message": "El Decisor está listo."}
 
 @app.post("/api/analizar")
 async def analizar_url(request: AnalisisRequest):
     url = request.url.strip()
     
-    # 1. Comprobar caché
+    # 1. Comprobar caché en Supabase
     try:
         existente = supabase.table("analisis").select("*").eq("url", url).execute()
         if existente.data:
@@ -67,22 +62,21 @@ async def analizar_url(request: AnalisisRequest):
             if cache.get('slug') and cache.get('analisis_ia'):
                 return cache
             else:
-                # Borrar si está corrupto
                 supabase.table("analisis").delete().eq("id", cache['id']).execute()
     except Exception as e:
         print(f"Caché omitido: {e}")
 
-    # 2. Scraping
+    # 2. Obtener datos de la web (Scraping)
     datos_web = await obtener_datos_url(url)
     if "error" in datos_web:
         raise HTTPException(status_code=400, detail=datos_web["error"])
 
+    # 3. Procesar con IA
     analisis_ia = await analizar_contenido_ia(datos_web['contenido'])
     if "error" in analisis_ia:
-        # CAMBIAMOS ESTA LÍNEA PARA VER EL ERROR REAL
         raise HTTPException(status_code=503, detail=f"Error de IA: {analisis_ia['error']}")
 
-    # 4. Guardar y retornar
+    # 4. Generar Slug y Guardar Resultado
     slug = crear_slug(datos_web['titulo'])
     nuevo_analisis = {
         "url": url,
@@ -127,19 +121,14 @@ async def suscribir_usuario(request: SuscripcionRequest):
             "slug_producto": request.slug
         }
         supabase.table("suscripciones").insert(datos).execute()
-        return {"mensaje": "¡Perfecto! Te avisaremos si el precio baja. 🕵️‍♂️"}
+        return {"mensaje": "¡Suscripción guardada! Te avisaremos si hay cambios."}
     except Exception as e:
-        print(f"Error suscripción: {e}")
-        raise HTTPException(status_code=500, detail="No se pudo guardar la suscripción.")
+        raise HTTPException(status_code=500, detail="Error al guardar suscripción.")
 
-# --- AÑADE ESTO EN api/app/main.py PARA PROBAR ---
 @app.get("/api/debug-keys")
 def debug_keys():
-    import os
     return {
-        "scraper_key_detectada": bool(os.getenv("WEB_SCRAPING_AI_KEY")),
-        "gemini_key_detectada": bool(os.getenv("GEMINI_API_KEY")),
-        "supabase_detectada": bool(os.getenv("SUPABASE_URL")),
-        # NO imprimimos las claves por seguridad, solo si existen (True/False)
+        "scraper_key": bool(os.getenv("WEB_SCRAPING_API_KEY")),
+        "gemini_key": bool(os.getenv("GEMINI_API_KEY")),
+        "supabase_key": bool(os.getenv("SUPABASE_URL")),
     }
-# -------------------------------------------------
