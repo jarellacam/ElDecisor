@@ -10,7 +10,7 @@ async def obtener_datos_url(url: str):
         url = f"https://www.amazon.es/dp/{url.split('/')[-1]}" if "/dp/" in url else f"https://{url}"
 
     # 2. API Key de WebScraping.ai (u otro)
-    api_key = os.getenv("WEB_SCRAPING_API_KEY")
+    api_key = os.getenv("WEB_SCRAPING_AI_KEY")
     if not api_key:
         return {"error": "Configura la API Key en Vercel"}
 
