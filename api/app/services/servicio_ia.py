@@ -12,13 +12,13 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    print("❌ ERROR CRÍTICO: No se encontró la variable GEMINI_API_KEY")
+    print("ERROR CRÍTICO: No se encontró la variable GEMINI_API_KEY")
 
 genai.configure(api_key=api_key)
 
 # --- CAMBIO DE MODELO ---
 # Usamos 'gemini-pro' que es el modelo estándar (v1.0) y funciona en todas las versiones de la API.
-modelo = genai.GenerativeModel('gemini-pro')
+modelo = genai.GenerativeModel('gemini-2.0-flash')
 
 async def analizar_contenido_ia(texto_sucio: str):
     texto_breve = texto_sucio[:4000]
@@ -50,7 +50,7 @@ async def analizar_contenido_ia(texto_sucio: str):
             return json.loads(limpio)
 
         except Exception as e:
-            print(f"⚠️ Intento {intento+1} fallido: {e}")
+            print(f"Intento {intento+1} fallido: {e}")
             if intento == max_reintentos - 1:
                 return {"error": "La IA no pudo procesar este producto."}
             await asyncio.sleep(2)
