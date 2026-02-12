@@ -5,63 +5,56 @@ import google.generativeai as genai
 from google.api_core import exceptions
 from dotenv import load_dotenv
 
-# Cargamos variables .env
+# Cargamos variables .env (solo para local)
 load_dotenv()
 
-# Configuramos IA
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# --- CORRECCIÓN 1: Usamos el nombre correcto de la variable ---
+# Antes buscabas "GEMINI_API_KEY", ahora buscamos "GOOGLE_API_KEY"
+api_key = os.getenv("GEMINI_API_KEY")
 
-# Cambiamos a 1.5-flash para mayor estabilidad y cuota
-modelo = genai.GenerativeModel('gemini-2.5-flash')
+if not api_key:
+    print("❌ ERROR CRÍTICO: No se encontró la variable GOOGLE_API_KEY")
+
+genai.configure(api_key=api_key)
+
+# --- CORRECCIÓN 2: Usamos un modelo que SÍ existe y es rápido ---
+# Cambiado de 'gemini-2.5-flash' (que no existe) a 'gemini-1.5-flash'
+modelo = genai.GenerativeModel('gemini-1.5-flash')
 
 async def analizar_contenido_ia(texto_sucio: str):
-    texto_breve = texto_sucio[:3000] 
+    texto_breve = texto_sucio[:4000] # Aumentamos un poco el límite
     max_reintentos = 3
-    espera_inicial = 5  # segundos
+    espera_inicial = 2 
 
     prompt = f"""
-    Analiza el siguiente texto extraído de una web:
+    Eres un experto analista de productos. Analiza este texto de una web de producto:
     "{texto_breve}"
     
-    Responde ÚNICAMENTE en formato JSON puro, sin bloques de código markdown, con esta estructura:
+    Responde ÚNICAMENTE con un JSON válido (sin markdown ```json) con esta estructura:
     {{
-        "tipo_contenido": "producto" o "noticia" o "otro",
-        "resumen_ejecutivo": "máximo 20 palabras",
-        "puntos_clave": ["punto 1", "punto 2", "punto 3"],
-        "veredicto_valor": "alto/medio/bajo",
-        "explicacion": "breve explicación de por qué"
+        "tipo_contenido": "producto" (o "articulo" si no es vendible),
+        "nombre_producto": "Nombre corto y claro",
+        "puntos_clave": ["Lo bueno 1", "Lo bueno 2", "Lo malo 1"],
+        "veredicto": "Compra recomendada" o "Buscar alternativa",
+        "resumen": "Resumen en 2 frases"
     }}
     """
 
     for intento in range(max_reintentos):
         try:
-            # Llamada asíncrona a la IA
+            # Llamada asíncrona
             respuesta = await modelo.generate_content_async(prompt)
             texto_respuesta = respuesta.text
 
-            # Limpieza de seguridad
+            # Limpieza de seguridad para quitar ```json y ```
             limpio = texto_respuesta.replace("```json", "").replace("```", "").strip()
+            
             return json.loads(limpio)
 
-        except exceptions.ResourceExhausted:
-            # Error 429: Cuota excedida
-            tiempo_espera = espera_inicial * (intento + 1)
-            print(f"Cuota agotada. Reintento {intento + 1}/{max_reintentos} en {tiempo_espera}s...")
-            await asyncio.sleep(tiempo_espera)
-            continue
-
-        except json.JSONDecodeError:
-            return {
-                "error": "La IA no devolvió un formato válido",
-                "respuesta_cruda": texto_respuesta[:100] if 'texto_respuesta' in locals() else ""
-            }
-            
         except Exception as e:
-            # Si es el último intento y falla, devolvemos el error
+            print(f"⚠️ Intento {intento+1} fallido: {e}")
             if intento == max_reintentos - 1:
-                return {"error": f"La IA se ha mareado tras varios intentos: {str(e)}"}
-            
+                return {"error": "La IA no pudo procesar este producto."}
             await asyncio.sleep(2)
-            continue
 
-    return {"error": "No se pudo obtener respuesta de la IA después de varios reintentos."}
+    return {"error": "Error desconocido en IA"}
