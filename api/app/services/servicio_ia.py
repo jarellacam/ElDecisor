@@ -7,40 +7,48 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Usamos GEMINI_API_KEY que es la que tienes en True en el debug
+# Usamos la clave que ya sabemos que funciona
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
-# Usamos 'gemini-pro': es el más estable y con cuota gratuita más generosa
-modelo = genai.GenerativeModel('gemini-pro')
+# Usamos 1.5-flash que es el más rápido
+modelo = genai.GenerativeModel('gemini-1.5-flash')
 
 async def analizar_contenido_ia(texto_sucio: str):
-    texto_breve = texto_sucio[:3500] 
+    # Reducimos un poco el texto para no saturar la memoria
+    texto_breve = texto_sucio[:3000] 
     
     prompt = f"""
-    Analiza este producto y responde SOLO en JSON:
+    Analiza este producto y responde SOLO un JSON puro, sin bloques de código:
     {{
         "tipo_contenido": "producto",
         "nombre_producto": "Nombre",
         "puntos_clave": ["punto 1", "punto 2"],
-        "veredicto": "recomendado/no recomendado",
-        "resumen": "resumen corto"
+        "veredicto": "recomendado",
+        "resumen": "resumen"
     }}
     Texto: "{texto_breve}"
     """
 
     try:
-        # Generación de contenido
+        # Llamada directa
         respuesta = await modelo.generate_content_async(prompt)
         
-        # Limpieza de markdown
-        limpio = respuesta.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(limpio)
+        # Si la respuesta está vacía o bloqueada
+        if not respuesta.text:
+            return {"error": "Google bloqueó la respuesta por seguridad o contenido."}
+
+        # Limpieza manual de la respuesta
+        texto = respuesta.text
+        if "```" in texto:
+            texto = texto.split("```")[1]
+            if texto.startswith("json"):
+                texto = texto[4:]
+        
+        return json.loads(texto.strip())
 
     except exceptions.ResourceExhausted:
-        # Error 429: Cuota agotada
-        return {"error": "IA saturada (límite de cuota gratuita). Reintenta en 1 minuto."}
+        return {"error": "Cuota de Google agotada. Espera 60 segundos."}
     except Exception as e:
-        # Cualquier otro error (404, etc)
-        print(f"Error IA: {e}")
-        return {"error": "La IA no ha podido procesar este enlace."}
+        # Esto nos dirá si es un 404, un 400 o qué
+        return {"error": str(e)}

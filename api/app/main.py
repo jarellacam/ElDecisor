@@ -77,10 +77,10 @@ async def analizar_url(request: AnalisisRequest):
     if "error" in datos_web:
         raise HTTPException(status_code=400, detail=datos_web["error"])
 
-    # 3. Análisis IA
     analisis_ia = await analizar_contenido_ia(datos_web['contenido'])
     if "error" in analisis_ia:
-        raise HTTPException(status_code=503, detail="La IA está saturada. Inténtalo de nuevo.")
+        # CAMBIAMOS ESTA LÍNEA PARA VER EL ERROR REAL
+        raise HTTPException(status_code=503, detail=f"Error de IA: {analisis_ia['error']}")
 
     # 4. Guardar y retornar
     slug = crear_slug(datos_web['titulo'])
