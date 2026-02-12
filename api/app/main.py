@@ -131,3 +131,15 @@ async def suscribir_usuario(request: SuscripcionRequest):
     except Exception as e:
         print(f"Error suscripción: {e}")
         raise HTTPException(status_code=500, detail="No se pudo guardar la suscripción.")
+
+# --- AÑADE ESTO EN api/app/main.py PARA PROBAR ---
+@app.get("/api/debug-keys")
+def debug_keys():
+    import os
+    return {
+        "scraper_key_detectada": bool(os.getenv("WEB_SCRAPING_AI_KEY")),
+        "gemini_key_detectada": bool(os.getenv("GOOGLE_API_KEY")),
+        "supabase_detectada": bool(os.getenv("SUPABASE_URL")),
+        # NO imprimimos las claves por seguridad, solo si existen (True/False)
+    }
+# -------------------------------------------------
