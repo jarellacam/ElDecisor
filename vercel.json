@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/app/main.py": {
-      "runtime": "python"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
