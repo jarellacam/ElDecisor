@@ -4,61 +4,59 @@ import urllib.parse
 from bs4 import BeautifulSoup
 
 async def obtener_datos_url(url: str):
-    # 1. Limpieza básica
+    # 1. Limpieza de URL para evitar errores de protocolo
     url = url.strip()
     if not url.startswith("http"):
         url = f"https://www.amazon.es/dp/{url.split('/')[-1]}" if "/dp/" in url else f"https://{url}"
 
-    # 2. INTENTO DIRECTO (Gratis, sin API Key)
-    # Intentamos engañar a Amazon fingiendo ser un navegador normal
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "es-ES,es;q=0.9",
-        "Referer": "https://www.google.com/"
-    }
+    # 2. API Key de WebScraping.ai
+    # OJO: Asegúrate de que en Vercel la variable se llama EXACTAMENTE así:
+    api_key = os.getenv("WEB_SCRAPING_AI_KEY")
+    
+    if not api_key:
+        return {"error": "Configura la variable WEB_SCRAPING_AI_KEY en Vercel"}
 
-    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+    # Construimos la petición al proxy
+    params = {
+        "api_key": api_key,
+        "url": url,
+        "proxy": "datacenter", 
+        "country": "es"
+    }
+    proxy_url = f"https://api.webscraping.ai/html?{urllib.parse.urlencode(params)}"
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
-            print(f"📡 Intentando acceso directo a: {url}")
-            response = await client.get(url, headers=headers)
+            print(f"📡 Solicitando vía Proxy a: {url}")
+            response = await client.get(proxy_url)
             
-            # Si Amazon nos deja pasar (200 OK)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                titulo = _obtener_titulo(soup)
-                
-                # Si conseguimos título, ¡éxito!
-                if titulo and "amazon" not in titulo.lower() and "captcha" not in titulo.lower():
-                    return {
-                        "titulo": titulo,
-                        "precio": _obtener_precio(soup),
-                        "contenido": soup.get_text(separator=' ', strip=True)[:8000],
-                        "url": url
-                    }
+            if response.status_code == 403:
+                return {"error": "Límite de créditos agotado o API Key incorrecta."}
             
-            # 3. PLAN B: Si Amazon nos bloquea o falla, devolvemos un PRODUCTO DE PRUEBA
-            # Esto es para que VEAS TU APP FUNCIONAR aunque el scraping falle.
-            print("⚠️ Amazon bloqueó el acceso directo. Usando datos de respaldo.")
+            if response.status_code != 200:
+                return {"error": f"Error del Proxy: {response.status_code}"}
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            titulo = _obtener_titulo(soup)
+            precio = _obtener_precio(soup)
+            
+            if "Producto sin título" in titulo:
+                return {"error": "Amazon detectó el proxy. Reintentando..."}
+
             return {
-                "titulo": "Producto de Prueba (Scraping Bloqueado)",
-                "precio": "99.99€",
-                "contenido": f"Este es un contenido simulado porque Amazon ha detectado el bot. El producto solicitado era: {url}. La IA analizará este texto genérico sobre tecnología y calidad precio.",
+                "titulo": titulo,
+                "precio": precio,
+                "contenido": soup.get_text(separator=' ', strip=True)[:10000],
                 "url": url
             }
-
         except Exception as e:
-            # Si todo explota, devolvemos error pero formateado
-            print(f"Error fatal scraper: {e}")
-            return {"error": f"Error de conexión: {str(e)}"}
+            return {"error": f"Fallo de conexión: {str(e)}"}
 
 def _obtener_titulo(soup):
-    # Selectores comunes de Amazon
-    tag = soup.select_one("#productTitle") or soup.select_one("h1")
-    if tag: return tag.get_text(strip=True)
-    return "Título no detectado"
+    tag = soup.select_one("span#productTitle") or soup.select_one("h1")
+    return tag.get_text(strip=True) if tag else "Producto sin título"
 
 def _obtener_precio(soup):
-    # Selectores de precio
     tag = soup.select_one(".a-price .a-offscreen") or soup.select_one(".a-price-whole")
-    if tag: return tag.get_text(strip=True)
-    return "Consultar precio"
+    return tag.get_text(strip=True) if tag else "Consultar precio"
