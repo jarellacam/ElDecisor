@@ -15,7 +15,7 @@ async def analizar_contenido_ia(texto_sucio: str):
     texto_breve = texto_sucio[:2500] 
     
     # Lista de modelos a intentar en orden de prioridad
-    modelos_a_probar = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+    modelos_a_probar = ['gemini-2.0-flash']
     
     prompt = f"""
     Responde SOLO JSON:
