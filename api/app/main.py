@@ -138,7 +138,7 @@ def debug_keys():
     import os
     return {
         "scraper_key_detectada": bool(os.getenv("WEB_SCRAPING_AI_KEY")),
-        "gemini_key_detectada": bool(os.getenv("GOOGLE_API_KEY")),
+        "gemini_key_detectada": bool(os.getenv("GEMINI_API_KEY")),
         "supabase_detectada": bool(os.getenv("SUPABASE_URL")),
         # NO imprimimos las claves por seguridad, solo si existen (True/False)
     }
