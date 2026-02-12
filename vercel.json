@@ -3,12 +3,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/app/main.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/dist/$1",
-      "checkInternalRoutes": false
+      "destination": "api/app/main.py"
     },
     {
       "source": "/(.*)",
