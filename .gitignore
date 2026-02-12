@@ -1,0 +1,55 @@
+# --- DEPENDENCIAS (El filtro de seguridad) ---
+node_modules/
+frontend/node_modules/
+api/venv/
+.venv
+env/
+venv.bak/
+build/
+dist/
+
+# --- SECRETOS Y CONFIGURACIÓN ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.flaskenv
+
+# --- CACHÉ Y LIBRERÍAS DE PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- LOGS Y DEBUGGING ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- EDITOR Y SISTEMA ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

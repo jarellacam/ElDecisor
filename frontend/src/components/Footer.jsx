@@ -11,7 +11,7 @@ const Footer = () => {
       textAlign: 'center'
     }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <p style={{ fontWeight: 'bold', color: '#4F46E5', marginBottom: '1rem' }}>🕵️‍♂️ El Decisor</p>
+        <p style={{ fontWeight: 'bold', color: '#4F46E5', marginBottom: '1rem' }}></p>
         
         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '1rem' }}>
           <Link to="/" style={linkStyle}>Inicio</Link>
