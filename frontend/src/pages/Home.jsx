@@ -44,6 +44,7 @@ export default function Home() {
   const [fraseIndex, setFraseIndex] = useState(0);
   const navigate = useNavigate();
 
+  // 🛠️ Cambiar a 'false' para conectar con el backend real en main.py
   const MODO_DISENO = true; 
 
   useEffect(() => {
@@ -54,16 +55,38 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [cargando]);
 
-  const manejarAnalisis = (e) => {
+  const manejarAnalisis = async (e) => {
     e.preventDefault();
     if (!url) return;
     setCargando(true);
 
     if (MODO_DISENO) {
+      // Simulación para pruebas de interfaz
       setTimeout(() => {
         setCargando(false);
         navigate(`/analisis/${DATOS_PRUEBA.slug}`, { state: { resultado: DATOS_PRUEBA } });
       }, 3000);
+    } else {
+      // 🚀 CONEXIÓN REAL CON EL BACKEND
+      try {
+        const response = await fetch('/api/analizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await response.json();
+        
+        if (data.slug) {
+          navigate(`/analisis/${data.slug}`, { state: { resultado: data } });
+        } else {
+          alert("Error en el escaneo forense. Revisa la URL.");
+        }
+      } catch (error) {
+        console.error("Fallo de conexión con la API:", error);
+        alert("La API no responde. Verifica que el backend esté desplegado.");
+      } finally {
+        setCargando(false);
+      }
     }
   };
 
@@ -157,7 +180,7 @@ export default function Home() {
         </div>
 
         {/* --- RECUADROS DE CONFIANZA (Trust Grid) --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32 animate-reveal delay-500 opacity-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32 animate-reveal delay-500">
           <TrustCard 
             icon={<Cpu size={30}/>} 
             title="IA Forense" 
@@ -186,7 +209,6 @@ export default function Home() {
   );
 }
 
-// COMPONENTE PARA LOS RECUADROS (Trust Cards)
 function TrustCard({ icon, title, desc, color }) {
   return (
     <div className="group p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 text-left relative overflow-hidden">
