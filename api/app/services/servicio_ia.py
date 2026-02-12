@@ -1,55 +1,49 @@
 import os
 import json
-import asyncio
-import google.generativeai as genai
-from google.api_core import exceptions
-from dotenv import load_dotenv
+from google import genai
+from google.genai import types
 
-load_dotenv()
+async def analizar_contenido_ia(texto_web: str):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return {"error": "Falta GEMINI_API_KEY en Vercel"}
 
-api_key = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+    try:
+        # Iniciamos el cliente con la nueva librería
+        client = genai.Client(api_key=api_key)
+        
+        prompt = f"""
+        Eres un experto analista de compras forense. Analiza el siguiente texto extraído de una tienda online y devuelve un JSON estricto con esta estructura exacta:
+        {{
+            "nombre_producto": "Nombre corto del producto",
+            "puntos_clave": ["✅ Punto positivo 1", "✅ Punto positivo 2", "❌ Punto negativo 1", "❌ Punto negativo 2"],
+            "veredicto": "Compra Recomendada" o "Precaución" o "No Recomendada",
+            "resumen": "Un resumen de 2 líneas sobre si merece la pena.",
+            "veredicto_valor": "alto", # Usa "alto", "medio" o "bajo" (en minúsculas)
+            "metricas": [
+                {{"subject": "Calidad", "A": 90}},
+                {{"subject": "Precio", "A": 60}},
+                {{"subject": "Fiabilidad", "A": 85}},
+                {{"subject": "Opiniones", "A": 80}},
+                {{"subject": "Popularidad", "A": 95}}
+            ]
+        }}
+        
+        TEXTO A ANALIZAR:
+        {texto_web[:4000]} 
+        """
 
-async def analizar_contenido_ia(texto_sucio: str):
-    # Texto más corto para ahorrar tokens y evitar el error 429
-    texto_breve = texto_sucio[:2500] 
-    
-    # Lista de modelos a intentar en orden de prioridad
-    modelos_a_probar = ['gemini-2.0-flash']
-    
-    prompt = f"""
-    Responde SOLO JSON:
-    {{
-        "tipo_contenido": "producto",
-        "nombre_producto": "Nombre",
-        "puntos_clave": ["punto 1", "punto 2"],
-        "veredicto": "recomendado",
-        "resumen": "resumen corto"
-    }}
-    Texto: {texto_breve}
-    """
+        # Llamada a la IA forzando que devuelva un JSON válido
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
 
-    ultimo_error = ""
+        return json.loads(response.text)
 
-    for nombre_modelo in modelos_a_probar:
-        try:
-            print(f"Intentando con: {nombre_modelo}")
-            modelo = genai.GenerativeModel(nombre_modelo)
-            respuesta = await modelo.generate_content_async(prompt)
-            
-            if respuesta and respuesta.text:
-                texto = respuesta.text
-                if "```" in texto:
-                    texto = texto.split("```")[1].replace("json", "").strip()
-                return json.loads(texto.strip())
-                
-        except exceptions.ResourceExhausted:
-            ultimo_error = "Cuota agotada en este modelo."
-            print(f"{nombre_modelo} sin cuota. Probando siguiente...")
-            continue 
-        except Exception as e:
-            ultimo_error = str(e)
-            print(f"Error en {nombre_modelo}: {e}")
-            continue
-
-    return {"error": f"Ningún modelo funcionó. Último error: {ultimo_error}"}
+    except Exception as e:
+        print(f"Error en Gemini GenAI: {e}")
+        return {"error": str(e)}
