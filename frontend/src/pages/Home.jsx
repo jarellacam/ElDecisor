@@ -44,8 +44,7 @@ export default function Home() {
   const [fraseIndex, setFraseIndex] = useState(0);
   const navigate = useNavigate();
 
-  // 🛠️ Cambiar a 'false' para conectar con el backend real en main.py
-  const MODO_DISENO = true; 
+  const MODO_DISENO = false; 
 
   useEffect(() => {
     let interval;
